@@ -2,7 +2,6 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-import queue
 import sklearn.preprocessing as preData
 
 def map1(data):
@@ -135,8 +134,11 @@ class DataRecord():
 
 class TestData:
     def __init__(self):
+        print("init test data set")
+
         self.reqTable=[]
         self.images={}
+        self.models={}
         with open("../data/OriginalData/test.csv","r") as f:
             reader=csv.reader(f)
             header=True
@@ -154,16 +156,23 @@ class TestData:
                     continue
                 self.reqTable.append(row)
 
-    def addModels(self,modelList):
-            self.models=modelList
+        print('test size',len(self.reqTable))
+    def addModels(self,modelSet):
+            self.models=modelSet
     def predictResults(self):
-        with open("../data/PredictResult/result.csv","w",newline="") as f:
+        print("predicting data")
+        result_file="../data/PredictResult/result.csv"
+        with open(result_file,"w",newline="") as f:
             writer=csv.writer(f)
             writer.writerow(['RowId','Location'])
             for record in self.reqTable:
-                result=self.models[record[2]].predict(self.images[record[1]])
-                writer.writerow([record[0],result])
+                leaner=self.models[record[2]]
+                img=[self.images[record[1]]]
+                img=np.array(img,dtype=np.float32)
+                result=leaner.predict(img)
 
+                writer.writerow([record[0],result[0][0]])
+        print("result saved into",result_file)
 
 #pipeline fetching data
 class FetchingData:
@@ -174,9 +183,9 @@ class FetchingData:
         self.testSize = None
         self.testImg = []
         self.testLabel = []
+        self.name = labels_file.split("/")[-1][:-4]
+        print("init data set for",self.name)
 
-        print("init data set")
-        self.name=""
         self.scalarX=preData.MinMaxScaler()
         self.scalarY=preData.MinMaxScaler()
         self.labels={}
@@ -290,8 +299,17 @@ if __name__=="__main__":
         print(k,"missing=",dataR.positionData[k]["missing"])
     dataR.dataDsitributionPlot()
     '''
-
-
+    tdata=TestData()
+    count=0
+    for img in tdata.images.keys():
+        print(img,len(tdata.images[img]),tdata.images[img])
+        count=count+1
+        if count>10:break
+    for id in tdata.reqTable:
+        print(id)
+        count=count+1
+        if count>20:break
+    exit(2)
     img_file='../data/ProcessedData/face_image.csv'
     label_file='../data/ProcessedData/mouth_right_corner.csv'
     data=FetchingData(img_file,label_file)

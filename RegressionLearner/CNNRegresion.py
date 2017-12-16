@@ -124,7 +124,7 @@ class ConvNet(ModelDesign):
         self.data=data
         self.model=None
         self.predictDim=1
-
+        self.name=''
         self.learnRate = 1e-4
         self.batchSize = 50
         self.iterationNum = 3000
