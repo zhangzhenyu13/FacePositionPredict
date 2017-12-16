@@ -3,7 +3,13 @@ from queue import *
 from LoadData.DataRecord import *
 import os
 import RegressionLearner.simpleDNN as snnreg
-import RegressionLearner.CNNRegresion as cnnreg
+import RegressionLearner.CustomizedNN as cnnreg
+import RegressionLearner.TraditionalRegressor as treg
+
+
+
+#this class runs in back to save time for training
+#this class produce data object and save them in a queue
 class runPipe(threading.Thread):
     def __init__(self,filePath):
         threading.Thread.__init__(self)
@@ -29,14 +35,14 @@ class runPipe(threading.Thread):
     def getData(self):
         return self.dataQueue.get()
 
+#given a model class, this function run all the train and save test predictions
 def runEntry(model):
     label_file = '../data/ProcessedData/'
     getter=runPipe(label_file)
     getter.start()
 
     modelSet={}
-    testData=TestData()
-    files=os.listdir(label_file)
+
     count=1
     while getter.getting or getter.dataQueue.qsize()>0:
         print("#",count)
@@ -63,10 +69,11 @@ def runEntry(model):
 
         modelSet[learner.name]=learner
 
+    testData = TestData()
     testData.addModels(modelSet)
     testData.predictResults()
 
 
 if __name__ == '__main__':
     #runEntry(snnreg.SimpleNN)
-    runEntry(cnnreg.NN)
+    runEntry(treg.TreeRegressor)
