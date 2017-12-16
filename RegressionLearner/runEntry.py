@@ -76,4 +76,4 @@ def runEntry(model):
 
 if __name__ == '__main__':
     #runEntry(snnreg.SimpleNN)
-    runEntry(treg.TreeRegressor)
+    runEntry(cnnreg.ConvNet)

@@ -78,17 +78,14 @@ def run():
     testData.predictResults()
 '''
 
-
 class dataHandle:
     data=None
     target=None
 class SimpleNN(ModelDesign):
     def __init__(self,data):
-        self.data=data
-        self.model=None
+        ModelDesign.__init__(self,data)
         self.learningRate=1e-4
-        self.iterNum=2000
-        self.name=""
+        self.iterNum=10000
     def predict(self,x):
         #x must be an array type
         #print(len(x),x)

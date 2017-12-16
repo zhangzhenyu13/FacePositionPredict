@@ -4,9 +4,8 @@ from RegressionLearner.ModelDesign import *
 import time
 class TreeRegressor(ModelDesign):
     def __init__(self,data):
-        self.model=None
-        self.name=''
-        self.data=data
+        ModelDesign.__init__(self,data)
+
     def train(self):
         data=self.data
         X,Y=data.getXY(data.trainSize)

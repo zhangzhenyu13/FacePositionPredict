@@ -27,8 +27,8 @@ def runForTuning():
 #a simple linear multi input regressor
 class LinearRegressor(ModelDesign):
     def __init__(self,data):
-        self.model=None
-        self.data = data
+        ModelDesign.__init__(self,data)
+
         self.learnRate = 1e-4
         self.batchSize = 50
         self.iterationNum = 30000
@@ -75,11 +75,11 @@ class LinearRegressor(ModelDesign):
 #this is very simple implementation of multi-layer perceptrons regression
 class NN(ModelDesign):
     def __init__(self,data):
-        self.data=data
-        self.model=None
+        ModelDesign.__init__(self,data)
+
         self.learnRate = 1e-4
         self.batchSize = 50
-        self.iterationNum = 3000
+        self.iterationNum = 10000
         # picSize:xy
         self.pX = 96
         self.pY = 96
@@ -170,13 +170,12 @@ class ConvNet(ModelDesign):
         return tf.nn.lrn(x, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75)
     #object method
     def __init__(self,data):
-        self.data=data
-        self.model=None
+        ModelDesign.__init__(self,data)
+
         self.predictDim=1
-        self.name=''
         self.learnRate = 1e-4
         self.batchSize = 50
-        self.iterationNum = 3000
+        self.iterationNum = 10000
         # picSize:xy
         self.pX = 96
         self.pY = 96
