@@ -208,8 +208,8 @@ class FetchingData:
                 x.append([eval(row[1])])
                 y.append([eval(row[2])])
                 count = count + 1
-        self.scalarX.fit(x)
-        self.scalarY.fit(y)
+        #self.scalarX.fit(x)
+        #self.scalarY.fit(y)
         #load those image data with id(s) in the given labels
         with open(images_file,"r") as f:
             image_reader = csv.reader(f)
@@ -224,6 +224,7 @@ class FetchingData:
                 self.images[row[0]] = np.array(list(map(int,row[1].split(" "))))
 
         self.Size=count
+        self.trainSize=count
         print("size=",self.Size)
 
     def rescale(self,y):
@@ -250,6 +251,8 @@ class FetchingData:
         print("split ratio=",ratio,"testSize/trainSize=",self.testSize,self.trainSize)
 
     def getTestData(self):
+        if self.testSize is None:
+            return (None,None)
         dimY=self.dimY
         X=[]
         Y=[]
@@ -259,10 +262,10 @@ class FetchingData:
         Y = np.array(Y)
         Y = Y[:, dimY:dimY + 1]
 
-        if dimY==0:
-            Y=self.scalarX.transform(Y)
-        elif dimY==1:
-            Y=self.scalarY.transform(Y)
+        #if dimY==0:
+        #    Y=self.scalarX.transform(Y)
+        #elif dimY==1:
+        #    Y=self.scalarY.transform(Y)
 
 
 
@@ -283,10 +286,10 @@ class FetchingData:
         Y = np.array(Y)
         Y = Y[:, dimY:dimY + 1]
 
-        if dimY == 0:
-            Y = self.scalarX.transform(Y)
-        elif dimY == 1:
-            Y = self.scalarY.transform(Y)
+        #if dimY == 0:
+        #    Y = self.scalarX.transform(Y)
+        #elif dimY == 1:
+        #    Y = self.scalarY.transform(Y)
 
         return X,Y
 #test

@@ -6,8 +6,6 @@ import RegressionLearner.simpleDNN as snnreg
 import RegressionLearner.CustomizedNN as cnnreg
 import RegressionLearner.TraditionalRegressor as treg
 
-
-
 #this class runs in back to save time for training
 #this class produce data object and save them in a queue
 class runPipe(threading.Thread):
@@ -25,7 +23,7 @@ class runPipe(threading.Thread):
                 continue
             lf = self.filePath + file
             data = FetchingData(img_file, lf)
-            data.splitData(0.9)
+            #data.splitData(0.9)
             self.dataQueue.put(data)
             count=count+1
 
@@ -76,4 +74,6 @@ def runEntry(model):
 
 if __name__ == '__main__':
     #runEntry(snnreg.SimpleNN)
-    runEntry(cnnreg.ConvNet)
+    #runEntry(cnnreg.ConvNet)
+
+    runEntry(treg.MyRegressor)

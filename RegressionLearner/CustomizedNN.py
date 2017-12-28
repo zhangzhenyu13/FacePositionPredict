@@ -7,20 +7,21 @@ def runForTuning():
     img_file = '../data/ProcessedData/face_image.csv'
     label_file = '../data/ProcessedData/mouth_right_corner.csv'
     data = FetchingData(img_file, label_file)
-    data.splitData(0.9)
+    data.splitData(0.98)
 
     method={}
-    method["1"]=NN
-    method["2"]=ConvNet
-    print("choice:1-neuralNet,2-convNet")
+    method["1"]=LinearRegressor
+    method["2"]=NN
+    method["3"]=ConvNet
+    "choice: 1-linearReg, 2-neuralNet,3-convNet"
 
-    choice = input()
+    choice = "3"
     learner=method[choice](data)
+    learner.name="testForTuning"
     learner.train()
 
     x,y=data.getTestData()
     y1=learner.predict(x)
-    y=data.rescale(y)
     for i in range(len(x)):
         print(y[i],y1[i])
 
@@ -44,7 +45,7 @@ class LinearRegressor(ModelDesign):
         self.sess = None
     def predict(self,x):
         result = self.sess.run(self.model, feed_dict={self.x: x})
-        result = self.data.rescale(result)
+        #result = self.data.rescale(result)
         return result
     def train(self):
         data=self.data
@@ -64,8 +65,9 @@ class LinearRegressor(ModelDesign):
                 print("step", i, "training RMSE=",
                       self.sess.run(loss, feed_dict={self.x: batchX, self.y: batchY, self.keep_prob: 1.0}))
                 tX, tY = data.getTestData()
-                print("step", i, "testing RMSE=",
-                      self.sess.run(loss, feed_dict={self.x: tX, self.y: tY, self.keep_prob: 1.0}))
+                if tX is not None:
+                    print("step", i, "testing RMSE=",
+                          self.sess.run(loss, feed_dict={self.x: tX, self.y: tY, self.keep_prob: 1.0}))
                 print()
 
             # finish tensor replace by using part of data improves speed
@@ -93,7 +95,7 @@ class NN(ModelDesign):
         pass
     def predict(self,x):
         result=self.sess.run(self.model,feed_dict={self.x:x,self.keep_prob:1.0})
-        result=self.data.rescale(result)
+        #result=self.data.rescale(result)
         return result
     def train(self):
         data=self.data
@@ -137,7 +139,8 @@ class NN(ModelDesign):
             if i%100==0:
                 print("step",i,"training RMSE=",self.sess.run(loss,feed_dict={self.x:batchX,self.y:batchC,self.keep_prob:1.0}))
                 tX,tY=data.getTestData()
-                print("step",i,"testing RMSE=",self.sess.run(loss,feed_dict={self.x:tX,self.y:tY,self.keep_prob:1.0}))
+                if tX is not None:
+                    print("step",i,"testing RMSE=",self.sess.run(loss,feed_dict={self.x:tX,self.y:tY,self.keep_prob:1.0}))
                 print()
 
             #finish tensor replace by using part of data improves speed
@@ -163,8 +166,11 @@ class ConvNet(ModelDesign):
     def max_pool_2x2(x):
       return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                             strides=[1, 2, 2, 1], padding='SAME')
+    def max_pool_3x3(x):
+      return tf.nn.max_pool(x, ksize=[1, 3, 3, 1],
+                            strides=[1, 3, 3, 1], padding='SAME')
     def max_pool_4x4(x):
-      return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
+      return tf.nn.max_pool(x, ksize=[1, 4, 4, 1],
                             strides=[1, 4, 4, 1], padding='SAME')
     def normalize(x):
         return tf.nn.lrn(x, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75)
@@ -175,7 +181,7 @@ class ConvNet(ModelDesign):
         self.predictDim=1
         self.learnRate = 1e-4
         self.batchSize = 50
-        self.iterationNum = 10000
+        self.iterationNum = 1000
         # picSize:xy
         self.pX = 96
         self.pY = 96
@@ -184,10 +190,17 @@ class ConvNet(ModelDesign):
         self.y = tf.placeholder(tf.float32, [None, 1])
         self.keep_prob=tf.placeholder(tf.float32)
         self.sess=None
+
+    def save(self):
+        saver=tf.train.Saver()
+        saver.save(self.sess,'../data/models/customizedNN/CNN_'+self.name+".ckpt")
+    def load(self):
+        saver=tf.train.Saver()
+        saver.restore(self.sess,'../data/models/customizedNN/CNN_'+self.name+".ckpt")
     def predict(self,x):
 
         result=self.sess.run(self.model,feed_dict={self.x:x,self.keep_prob:1.0})
-        result=self.data.rescale(result)
+        #result=self.data.rescale(result)
 
         return result
 
@@ -200,29 +213,42 @@ class ConvNet(ModelDesign):
 
         x_image = tf.reshape(self.x, [-1, self.pX, self.pY, 1])
 
-        W_conv1 = ConvNet.weight_variable([5, 5, 1, 32])#conv layer1 kernel 5*5
-        b_conv1 = ConvNet.bias_variable([32])
-        W_conv2 = ConvNet.weight_variable([5, 5, 32, 64])#conv layer2 kernel 5*5
-        b_conv2 = ConvNet.bias_variable([64])
-        W_conv3 = ConvNet.weight_variable([5,5,64,128])
-        b_conv3 = ConvNet.bias_variable([128])
-        W_fc1 = ConvNet.weight_variable([6*6 * 128, 2500])#total connect from 2dArray to hidden layer perceptrons(1024)
-        b_fc1 = ConvNet.bias_variable([2500])
-        W_fc2 = ConvNet.weight_variable([2500, 1])#connect from hiddenlayer to output layer(10)
+        W_conv1 = ConvNet.weight_variable([4, 4, 1, 20])#conv layer1 kernel 4*4
+        b_conv1 = ConvNet.bias_variable([20])
+        W_conv2 = ConvNet.weight_variable([4, 4, 20,40])#conv layer2 kernel 4*4
+        b_conv2 = ConvNet.bias_variable([40])
+        W_conv3 = ConvNet.weight_variable([4,4,40,60])
+        b_conv3 = ConvNet.bias_variable([60])
+        W_conv4=ConvNet.weight_variable([3,3,60,80])
+        b_conv4=ConvNet.bias_variable([80])
+        W_conv5=ConvNet.weight_variable([2,2,80,120])
+        b_conv5=ConvNet.bias_variable([120])
+
+
+
+        W_fc1 = ConvNet.weight_variable([2*2*120, 150])#total connect from 2dArray to hidden layer perceptrons(1024)
+        b_fc1 = ConvNet.bias_variable([150])
+        W_fc2 = ConvNet.weight_variable([150, 1])#connect from hiddenlayer to output layer(10)
         b_fc2 = ConvNet.bias_variable([1])
 
-        # Create the 1st conv layer, reduce to 24*24,32
+        # Create the 1st conv layer, reduce to 48*48
         h_conv1 = tf.nn.relu(ConvNet.conv2d(x_image, W_conv1) + b_conv1)
-        h_pool1 = ConvNet.max_pool_4x4(h_conv1)
-        # create the 2nd conv, layer reduce to 12*12,64
+        h_pool1 = ConvNet.max_pool_2x2(h_conv1)
+        # create the 2nd conv, layer reduce to 24*24
         h_conv2 = tf.nn.relu(ConvNet.conv2d(h_pool1, W_conv2) + b_conv2)
         h_pool2 = ConvNet.max_pool_2x2(h_conv2)
-        #create the 3rd conv,layer reduce to 6*6,128
+        #create the 3rd conv,layer reduce to 8*8
         h_conv3=tf.nn.relu(ConvNet.conv2d(h_pool2,W_conv3)+b_conv3)
-        h_pool3=ConvNet.max_pool_2x2(h_conv3)
+        h_pool3=ConvNet.max_pool_3x3(h_conv3)
+        #4th conv layer , 4*4
+        h_conv4=tf.nn.relu(ConvNet.conv2d(h_pool3,W_conv4)+b_conv4)
+        h_pool4=ConvNet.max_pool_2x2(h_conv4)
+        #5th conv layer,2*2
+        h_conv5=tf.nn.relu(ConvNet.conv2d(h_pool4,W_conv5)+b_conv5)
+        h_pool5=ConvNet.max_pool_2x2(h_conv5)
         # conv to multi-perceptrons layer, connect 6*6*64
-        h_pool3_flat = tf.reshape(h_pool3, [-1, 6*6 * 128])
-        h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
+        h_pool5_flat = tf.reshape(h_pool5, [-1, 2*2 * 120])
+        h_fc1 = tf.nn.relu(tf.matmul(h_pool5_flat, W_fc1) + b_fc1)
         # define dropout
         h_fc1_drop = tf.nn.dropout(h_fc1, self.keep_prob)
         # define output layer
@@ -230,12 +256,18 @@ class ConvNet(ModelDesign):
         # Define loss and optimizer
 
         loss = tf.sqrt(tf.reduce_mean(tf.square((self.y-self.model))))
-        train_step = tf.train.AdamOptimizer(self.learnRate).minimize(loss)
+        train_step = tf.train.AdagradOptimizer(self.learnRate).minimize(loss)
 
-        self.sess = tf.InteractiveSession()
-        init = tf.global_variables_initializer()
-        self.sess.run(init)
-        #show data
+        try:
+            self.load()
+        except:
+            print("no cnn Model saved!!!")
+            self.sess=None
+
+        if self.sess is None:
+            self.sess = tf.InteractiveSession()
+            init = tf.global_variables_initializer()
+            self.sess.run(init)
 
 
         # Train
@@ -248,14 +280,18 @@ class ConvNet(ModelDesign):
                     self.x: batchX, self.y: batchY, self.keep_prob: 1.0})
                 print("step %d, training RMSE= %g" % (i, train_accuracy))
                 tX,tY=data.getTestData()
-                test_accuracy = loss.eval(feed_dict={
-                    self.x: tX, self.y: tY, self.keep_prob: 1.0})
-                print("step %d, testing RMSE= %g" % (i, test_accuracy))
+                if tX is not None:
+                    test_accuracy = loss.eval(feed_dict={
+                        self.x: tX, self.y: tY, self.keep_prob: 1.0})
+                    print("step %d, testing RMSE= %g" % (i, test_accuracy))
                 #print(sess.run(y_conv,feed_dict={x:batchX,y:batchY,keep_prob:1.0}))
                 print()
+            if i%500==0:
+                self.save()
             self.sess.run(train_step, feed_dict={self.x: batchX, self.y: batchY, self.keep_prob: 0.5})
         t2 = time.time()
         print("training finished in ",str(t2 - t1) + "s")
+        self.save()
 
 
 if __name__=="__main__":

@@ -114,7 +114,7 @@ class SimpleNN(ModelDesign):
         #Define regressor
         self.model = tf.estimator.LinearRegressor(feature_columns =feature_columns,
                                                #hidden_units=[200,150,80],
-                                                model_dir="../data/models/")
+                                                model_dir="../data/models/simpleNN/")
         # Define the training inputs
         train_input_fn = tf.estimator.inputs.numpy_input_fn(
             x={"x": training_set.data},
@@ -125,19 +125,22 @@ class SimpleNN(ModelDesign):
         # Train model.
         trainInfo=self.model.train(input_fn=train_input_fn, steps=self.iterNum)
 
+        print("model for ", self.name)
+        print("trainInfo", trainInfo)
+
+        if test_set.data is not None:
         # Define the test inputs
-        test_input_fn = tf.estimator.inputs.numpy_input_fn(
-            x={"x":test_set.data},
-            y=test_set.target,
-            num_epochs=1,
-            shuffle=False)
+            test_input_fn = tf.estimator.inputs.numpy_input_fn(
+                x={"x":test_set.data},
+                y=test_set.target,
+                num_epochs=1,
+                shuffle=False)
 
-        # Evaluate accuracy.
-        testInfo = self.model.evaluate(input_fn=test_input_fn,name=self.name)
+            # Evaluate accuracy.
+            testInfo = self.model.evaluate(input_fn=test_input_fn,name=self.name)
+            print("testInfo", testInfo)
 
-        print("model for ",self.name)
-        print("trainInfo",trainInfo)
-        print("testInfo",testInfo)
+
 
 
 if __name__ == '__main__':
